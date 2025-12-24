@@ -64,7 +64,6 @@ export default function PlatformerGame() {
           const COLS = 8;
           const ROWS = 7;
 
-          // Load Run & Idle (Both 8x7 Grids)
           const runImg = imagesRef.current.run;
           if (runImg) {
             this.textures.addSpriteSheet('playerRun', runImg, {
@@ -84,10 +83,30 @@ export default function PlatformerGame() {
 
         create() {
           this.physics.world.setBounds(0, 0, this.worldWidth, this.worldHeight);
+          
+          // 1. Create Ground
           this.createPlatform();
+          
+          // 2. Create Animations
+          this.createAnimations();
+          
+          // 3. Setup Player (Lower Depth to go BEHIND cards)
+          this.player = this.physics.add.sprite(200, this.worldHeight * 0.8, 'playerIdle');
+          this.player.setScale(0.4); 
+          this.player.setDepth(5); // <--- Player is at Depth 5
+          this.player.play('idle-anim');
+          
+          // 4. Add Tarot Cards (Higher Depth to stay IN FRONT)
           this.addPaintings();
           
-          // Animations
+          this.cursors = this.input.keyboard.createCursorKeys();
+          
+          this.cameras.main.setBounds(0, 0, this.worldWidth, this.worldHeight);
+          this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+          this.cameras.main.setFollowOffset(-this.cameras.main.width * 0.15, 0);
+        }
+
+        createAnimations() {
           this.anims.create({
             key: 'idle-anim',
             frames: this.anims.generateFrameNumbers('playerIdle', { start: 0, end: 49 }),
@@ -98,21 +117,9 @@ export default function PlatformerGame() {
           this.anims.create({
             key: 'run-anim',
             frames: this.anims.generateFrameNumbers('playerRun', { start: 0, end: 49 }),
-            frameRate: 60,
+            frameRate: 80,
             repeat: -1
           });
-          
-          // Player setup
-          this.player = this.physics.add.sprite(200, this.worldHeight * 0.8, 'playerIdle');
-          this.player.setScale(0.4); 
-          this.player.setDepth(10);
-          this.player.play('idle-anim');
-          
-          this.cursors = this.input.keyboard.createCursorKeys();
-          
-          this.cameras.main.setBounds(0, 0, this.worldWidth, this.worldHeight);
-          this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
-          this.cameras.main.setFollowOffset(-this.cameras.main.width * 0.15, 0);
         }
 
         createPlatform() {
@@ -124,7 +131,9 @@ export default function PlatformerGame() {
             this.platformPoints.push({ x, y });
           }
 
-          // PLATFORM COLORS: Light Brown Fill
+          graphics.setDepth(1); // Keep platform in the very back
+          
+          // Fill: Light Brown
           graphics.fillStyle(0xd2b48c, 1); 
           graphics.beginPath();
           graphics.moveTo(0, this.worldHeight);
@@ -133,7 +142,7 @@ export default function PlatformerGame() {
           graphics.closePath();
           graphics.fillPath();
 
-          // STROKE COLOR: Green
+          // Stroke: Green
           graphics.lineStyle(8, 0x228b22, 1);
           graphics.beginPath();
           graphics.moveTo(this.platformPoints[0].x, this.platformPoints[0].y);
@@ -142,16 +151,25 @@ export default function PlatformerGame() {
         }
 
         addPaintings() {
-          const cards = [{ key: 'htmlCard', x: 1000 }, { key: 'cssCard', x: 1300 }, { key: 'jsCard', x: 1600 }];
+          const cards = [
+            { key: 'htmlCard', x: 1000 }, 
+            { key: 'cssCard', x: 1300 }, 
+            { key: 'jsCard', x: 1600 }
+          ];
+          
           cards.forEach(card => {
             const idx = Math.floor((card.x / this.worldWidth) * (this.platformPoints.length - 1));
             const y = this.platformPoints[idx].y;
-            this.add.image(card.x, y - 200, card.key).setScale(0.7).setDepth(5);
+            
+            // Set Depth to 10 so the card is in front of the player (Depth 5)
+            const cardImg = this.add.image(card.x, y - 200, card.key);
+            cardImg.setScale(0.6);
+            cardImg.setDepth(10); // <--- Cards are at Depth 10
           });
         }
 
         update() {
-          const speed = 10;
+          const speed = 12;
           let moving = false;
           
           const moveLeft = this.cursors.left.isDown || window.moveLeftActive;
@@ -173,9 +191,11 @@ export default function PlatformerGame() {
             if (this.player.anims.currentAnim?.key !== 'idle-anim') this.player.play('idle-anim', true);
           }
           
-          this.player.x = Phaser.Math.Clamp(this.player.x, 100, this.worldWidth - 100);
+          this.player.x = Phaser.Math.Clamp(this.player.x, 50, this.worldWidth - 50);
+          
+          // Grounding
           const index = Math.floor((this.player.x / this.worldWidth) * (this.platformPoints.length - 1));
-          const targetY = this.platformPoints[Math.max(0, index)].y - (this.player.displayHeight / 2)+50;
+          const targetY = this.platformPoints[Math.max(0, index)].y - (this.player.displayHeight / 2) + 50;
           this.player.y += (targetY - this.player.y) * 0.2;
         }
       }
@@ -185,7 +205,7 @@ export default function PlatformerGame() {
         parent: gameRef.current,
         width: window.innerWidth,
         height: window.innerHeight,
-        backgroundColor: '#87CEEB', // BACKGROUND COLOR: Sky Blue
+        backgroundColor: '#87CEEB', // Sky Blue
         physics: { default: 'arcade', arcade: { gravity: { y: 0 } } },
         scene: GameScene,
         scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH }
@@ -234,8 +254,8 @@ const styles = {
   controlsLayer: { position: 'absolute', bottom: '10%', left: '0', width: '100%', display: 'flex', justifyContent: 'center', pointerEvents: 'none' },
   btnRow: { display: 'flex', gap: '40px', pointerEvents: 'auto' },
   circleBtn: {
-    width: '80px', height: '80px', borderRadius: '50%', border: '2px solid rgba(0,0,0,0.2)',
-    background: 'rgba(255,255,255,0.4)', color: 'black', fontSize: '30px', cursor: 'pointer', outline: 'none',
+    width: '80px', height: '80px', borderRadius: '50%', border: '2px solid rgba(0,0,0,0.1)',
+    background: 'rgba(255,255,255,0.5)', color: 'black', fontSize: '30px', cursor: 'pointer', outline: 'none',
     display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)'
   }
 };
