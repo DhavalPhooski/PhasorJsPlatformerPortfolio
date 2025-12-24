@@ -142,11 +142,11 @@ export default function PlatformerGame() {
         }
 
         addPaintings() {
-          const cards = [{ key: 'htmlCard', x: 1200 }, { key: 'cssCard', x: 1800 }, { key: 'jsCard', x: 2400 }];
+          const cards = [{ key: 'htmlCard', x: 1000 }, { key: 'cssCard', x: 1300 }, { key: 'jsCard', x: 1600 }];
           cards.forEach(card => {
             const idx = Math.floor((card.x / this.worldWidth) * (this.platformPoints.length - 1));
             const y = this.platformPoints[idx].y;
-            this.add.image(card.x, y - 250, card.key).setScale(0.7).setDepth(5);
+            this.add.image(card.x, y - 200, card.key).setScale(0.7).setDepth(5);
           });
         }
 
