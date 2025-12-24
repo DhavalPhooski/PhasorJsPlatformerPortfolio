@@ -8,7 +8,6 @@ export default function PlatformerGame() {
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const imagesRef = useRef({});
   
-  // State to track mobile/button inputs
   const [isLeftDown, setIsLeftDown] = useState(false);
   const [isRightDown, setIsRightDown] = useState(false);
 
@@ -76,6 +75,8 @@ export default function PlatformerGame() {
           this.platformPoints = [];
           this.worldWidth = 4000;
           this.worldHeight = 2250;
+          // Target display height for the player on screen
+          this.playerTargetHeight = 220; 
         }
 
         preload() {
@@ -103,7 +104,10 @@ export default function PlatformerGame() {
           this.createAnimations();
           
           this.player = this.physics.add.sprite(200, this.worldHeight * 0.85, 'playerIdle');
-          this.player.setScale(0.4); 
+          
+          // INITIAL SCALE SETTING
+          this.syncPlayerScale('idle');
+          
           this.player.body.setCollideWorldBounds(true);
           this.player.play('idle');
           this.player.setDepth(5); 
@@ -113,6 +117,22 @@ export default function PlatformerGame() {
           this.cameras.main.setBounds(0, 0, this.worldWidth, this.worldHeight);
           this.cameras.main.startFollow(this.player, false, 0.1, 0.1);
           this.cameras.main.setFollowOffset(-this.cameras.main.width * 0.15, 0);
+        }
+
+        /**
+         * Forces the player to be the same visual size regardless of which 
+         * spritesheet (250px or 500px) is being used.
+         */
+        syncPlayerScale(animKey) {
+          if (animKey === 'run') {
+            // Run frame is 250px. To get 220px height: 220 / 250 = 0.88
+            const scale = this.playerTargetHeight / 250;
+            this.player.setScale(scale);
+          } else {
+            // Idle frame is 500px. To get 220px height: 220 / 500 = 0.44
+            const scale = this.playerTargetHeight / 500;
+            this.player.setScale(scale);
+          }
         }
 
         createAnimations() {
@@ -146,7 +166,7 @@ export default function PlatformerGame() {
           graphics.lineTo(this.worldWidth, this.worldHeight);
           graphics.closePath();
           graphics.fillPath();
-          graphics.lineStyle(3, 0x2c5aa0, 1);
+          graphics.lineStyle(4, 0x2c5aa0, 1);
           graphics.beginPath();
           graphics.moveTo(this.platformPoints[0].x, this.platformPoints[0].y);
           this.platformPoints.forEach(p => graphics.lineTo(p.x, p.y));
@@ -157,8 +177,8 @@ export default function PlatformerGame() {
           const cards = [{ key: 'htmlCard', x: 1000 }, { key: 'cssCard', x: 1300 }, { key: 'jsCard', x: 1600 }];
           cards.forEach(card => {
             const y = this.getPlatformHeightAt(card.x);
-            const img = this.add.image(card.x, y - 200, card.key);
-            img.setScale(0.6).setDepth(10);
+            const img = this.add.image(card.x, y - 250, card.key);
+            img.setScale(0.7).setDepth(10);
           });
         }
 
@@ -169,10 +189,9 @@ export default function PlatformerGame() {
         }
 
         update() {
-          const speed = 8;
+          const speed = 10;
           let isMoving = false;
           
-          // Check Keyboard OR Button State
           const moveLeft = this.cursors.left.isDown || window.moveLeftActive;
           const moveRight = this.cursors.right.isDown || window.moveRightActive;
 
@@ -186,21 +205,24 @@ export default function PlatformerGame() {
             isMoving = true;
           }
           
+          // HANDLE ANIMATION AND SCALE SYNC
           if (isMoving) {
             if (this.player.anims.currentAnim?.key !== 'run') {
               this.player.play('run', true);
-              this.player.setScale(0.8); 
+              this.syncPlayerScale('run');
             }
           } else {
             if (this.player.anims.currentAnim?.key !== 'idle') {
               this.player.play('idle', true);
-              this.player.setScale(0.4); 
+              this.syncPlayerScale('idle');
             }
           }
           
-          this.player.x = Phaser.Math.Clamp(this.player.x, 20, this.worldWidth - 20);
-          const targetY = this.getPlatformHeightAt(this.player.x) - (this.player.displayHeight / 2)+50;
-          this.player.y += (targetY - this.player.y) * 0.15;
+          this.player.x = Phaser.Math.Clamp(this.player.x, 50, this.worldWidth - 50);
+          
+          // GROUNDING: Align bottom of sprite to the platform
+          const targetY = this.getPlatformHeightAt(this.player.x) - (this.player.displayHeight / 2);
+          this.player.y += (targetY - this.player.y) * 0.2;
         }
       }
 
@@ -209,10 +231,13 @@ export default function PlatformerGame() {
         parent: gameRef.current,
         width: window.innerWidth,
         height: window.innerHeight,
-        backgroundColor: '#1a1a2e',
+        backgroundColor: '#0f0f1b',
         physics: { default: 'arcade', arcade: { gravity: { y: 0 }, debug: false } },
         scene: GameScene,
-        scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH }
+        scale: { 
+          mode: Phaser.Scale.RESIZE, 
+          autoCenter: Phaser.Scale.CENTER_BOTH 
+        }
       };
 
       phaserGameRef.current = new Phaser.Game(config);
@@ -226,7 +251,6 @@ export default function PlatformerGame() {
     };
   }, [imagesLoaded]);
 
-  // Sync button state to a global window variable for Phaser to read
   useEffect(() => {
     window.moveLeftActive = isLeftDown;
     window.moveRightActive = isRightDown;
@@ -234,70 +258,83 @@ export default function PlatformerGame() {
 
   return (
     <div style={styles.container}>
-      {!imagesLoaded && <div style={styles.loading}>Loading Assets...</div>}
+      {!imagesLoaded && <div style={styles.loading}>Entering Tarot World...</div>}
       <div ref={gameRef} style={styles.game} />
       
-      {/* Mobile/On-Screen Controls */}
-      <div style={styles.buttonContainer}>
-        <button 
-          style={styles.navButton}
-          onMouseDown={() => setIsLeftDown(true)}
-          onMouseUp={() => setIsLeftDown(false)}
-          onMouseLeave={() => setIsLeftDown(false)}
-          onTouchStart={(e) => { e.preventDefault(); setIsLeftDown(true); }}
-          onTouchEnd={() => setIsLeftDown(false)}
-        >
-          ←
-        </button>
-        <button 
-          style={styles.navButton}
-          onMouseDown={() => setIsRightDown(true)}
-          onMouseUp={() => setIsRightDown(false)}
-          onMouseLeave={() => setIsRightDown(false)}
-          onTouchStart={(e) => { e.preventDefault(); setIsRightDown(true); }}
-          onTouchEnd={() => setIsRightDown(false)}
-        >
-          →
-        </button>
-      </div>
-
-      <div style={styles.controls}>
-        <p style={styles.text}>Keyboard Arrows or On-Screen Buttons</p>
+      {/* Mobile-Friendly Bottom Controls */}
+      <div style={styles.mobileOverlay}>
+        <div style={styles.buttonContainer}>
+          <button 
+            style={styles.navButton}
+            onMouseDown={() => setIsLeftDown(true)}
+            onMouseUp={() => setIsLeftDown(false)}
+            onMouseLeave={() => setIsLeftDown(false)}
+            onTouchStart={(e) => { e.preventDefault(); setIsLeftDown(true); }}
+            onTouchEnd={() => setIsLeftDown(false)}
+          >
+            ←
+          </button>
+          <button 
+            style={styles.navButton}
+            onMouseDown={() => setIsRightDown(true)}
+            onMouseUp={() => setIsRightDown(false)}
+            onMouseLeave={() => setIsRightDown(false)}
+            onTouchStart={(e) => { e.preventDefault(); setIsRightDown(true); }}
+            onTouchEnd={() => setIsRightDown(false)}
+          >
+            →
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
 const styles = {
-  container: { position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', background: '#1a1a2e' },
+  container: { 
+    position: 'relative', 
+    width: '100vw', 
+    height: '100vh', 
+    overflow: 'hidden', 
+    background: '#0f0f1b',
+    touchAction: 'none' // Prevents browser gestures like pull-to-refresh
+  },
   game: { width: '100%', height: '100%' },
-  loading: { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'white', fontSize: '24px', zIndex: 100 },
-  buttonContainer: {
+  loading: { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#8e94f2', fontSize: '20px', zIndex: 100 },
+  mobileOverlay: {
     position: 'absolute',
-    bottom: '80px',
-    left: '50%',
-    transform: 'translateX(-50%)',
+    bottom: '0',
+    left: '0',
+    width: '100%',
+    height: '25%',
     display: 'flex',
-    gap: '20px',
+    justifyContent: 'center',
+    alignItems: 'center',
+    pointerEvents: 'none', // Allows clicks to pass through except to buttons
     zIndex: 20
   },
+  buttonContainer: {
+    display: 'flex',
+    gap: '40px',
+    pointerEvents: 'auto'
+  },
   navButton: {
-    width: '70px',
-    height: '70px',
-    borderRadius: '50%',
-    border: '2px solid rgba(255,255,255,0.4)',
-    background: 'rgba(255,255,255,0.2)',
-    backdropFilter: 'blur(5px)',
+    width: '18vw',
+    height: '18vw',
+    maxWidth: '80px',
+    maxHeight: '80px',
+    borderRadius: '15px',
+    border: '2px solid rgba(142, 148, 242, 0.4)',
+    background: 'rgba(20, 20, 35, 0.7)',
+    backdropFilter: 'blur(10px)',
     color: 'white',
-    fontSize: '32px',
+    fontSize: '24px',
     cursor: 'pointer',
     userSelect: 'none',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'background 0.2s',
-    outline: 'none'
-  },
-  controls: { position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.5)', padding: '10px 20px', borderRadius: '8px', zIndex: 10 },
-  text: { color: 'white', margin: 0, fontSize: '14px' }
+    outline: 'none',
+    boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
+  }
 };
