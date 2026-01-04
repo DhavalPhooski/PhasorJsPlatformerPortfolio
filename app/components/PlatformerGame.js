@@ -23,6 +23,8 @@ export default function PlatformerGame() {
         idle: '/idle.png',
         benchGuy: '/BenchGuy.svg',
         statue: '/StatueOfDhaval.png',
+        prakarshBanner: '/PrakarshBanner.png',
+        tedxBanner: '/TedxBanner.png',
       };
 
       const loadPromises = Object.entries(imageUrls).map(([key, url]) => {
@@ -62,7 +64,7 @@ export default function PlatformerGame() {
         preload() {
           this.load.svg('tree', '/treee.svg', { width: 700, height: 1100 });
 
-          ['htmlCard', 'cssCard', 'jsCard', 'benchGuy', 'statue'].forEach(key => {
+          ['htmlCard', 'cssCard', 'jsCard', 'benchGuy', 'statue', 'prakarshBanner', 'tedxBanner'].forEach(key => {
             if (imagesRef.current[key]) this.textures.addImage(key, imagesRef.current[key]);
           });
           
@@ -84,70 +86,125 @@ export default function PlatformerGame() {
         }
 
         create() {
-          this.physics.world.setBounds(0, 0, this.worldWidth, this.worldHeight);
+            this.physics.world.setBounds(0, 0, this.worldWidth, this.worldHeight);
 
-          // Generate sparkle texture
-          const graphics = this.make.graphics({ x: 0, y: 0, add: false });
-          graphics.fillStyle(0xffffff, 1);
-          graphics.fillCircle(5, 5, 5);
-          graphics.generateTexture('sparkle', 10, 10);
-          
-          // Generate leaf texture for wind effect
-          const leafGraphics = this.make.graphics({ x: 0, y: 0, add: false });
-          leafGraphics.fillStyle(0x90EE90, 0.8);
-          leafGraphics.fillEllipse(5, 8, 8, 12);
-          leafGraphics.generateTexture('leaf', 10, 16);
-          
-          this.createSky();
-          this.createMountains();
-          this.createClouds();
-          
-          this.createPlatform();
-          this.createUndergroundRocks(); // <--- NEW: Generates rocks over the empty platform space
-          
-          this.createAnimations();
-          
-          const groundLevel = this.worldHeight * 0.92;
+            // Generate sparkle texture
+            const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+            graphics.fillStyle(0xffffff, 1);
+            graphics.fillCircle(5, 5, 5);
+            graphics.generateTexture('sparkle', 10, 10);
 
-          const textStyle = {
-            fontFamily: '"Beau Rivage", cursive',
-            fontSize: '180px',
-            fill: '#ffffffff',
-            stroke: '#808080ff',
-            strokeThickness: 4,
-          };
+            // Generate leaf texture for wind effect
+            const leafGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+            leafGraphics.fillStyle(0x90EE90, 0.8);
+            leafGraphics.fillEllipse(5, 8, 8, 12);
+            leafGraphics.generateTexture('leaf', 10, 16);
 
-          const introText = this.add.text(100, groundLevel - 600, 'Frontend\nDeveloper \n', textStyle);
-          introText.setDepth(2).setScrollFactor(1);
+            this.createSky();
+            this.createMountains();
+            this.createClouds();
 
-          // Add sparkling particles behind text
-          const textBounds = introText.getBounds();
-          const emitter = this.add.particles(0, 0, 'sparkle', {
-            x: { min: textBounds.x, max: textBounds.x + textBounds.width },
-            y: { min: textBounds.y, max: textBounds.y + textBounds.height },
-            lifespan: { min: 800, max: 1500 },
-            speedY: { min: -20, max: -50 },
-            scale: { start: 0.5, end: 0 },
-            alpha: { start: 0.8, end: 0 },
-            rotate: { min: 0, max: 360 },
-            tint: [ 0xFFD700, 0xFFFFFF, 0x00DFA2 ], 
-            blendMode: 'ADD',
-            frequency: 80
-          });
-          
-          emitter.setDepth(1);
-          emitter.setScrollFactor(1);
+            this.createPlatform();
+            this.createUndergroundRocks();
 
-          this.player = this.physics.add.sprite(300, groundLevel - 100, 'playerIdle');
-          this.player.setScale(0.4).setDepth(10).play('idle-anim');
-          
-          this.addWorldContent();
-          this.addGrassAndFlowers();
-          this.addWindEffect();
-          
-          this.cursors = this.input.keyboard.createCursorKeys();
-          this.cameras.main.setBounds(0, 0, this.worldWidth, this.worldHeight);
-          this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+            this.createAnimations();
+
+            const groundLevel = this.worldHeight * 0.92;
+
+            // --- TEXT SECTION ---
+
+            // 1. Main Title Style
+            const textStyle = {
+                fontFamily: '"Beau Rivage", cursive',
+                fontSize: '180px',
+                fill: '#ffffffff',
+                stroke: '#5e5c5cff',
+                strokeThickness: 5,
+            };
+
+            // 2. Subtitle Style (Smaller, thinner stroke)
+            const subTextStyle = {
+                fontFamily: '"Beau Rivage", cursive',
+                fontSize: '55px', 
+                fill: '#ffffffff',
+                stroke: '#5e5c5cff',
+                strokeThickness: 2,
+            };
+            const knowCssSytle ={
+                fontFamily: '"Beau Rivage", cursive',
+                fontSize: '70px', 
+                fill: '#ffffffff',
+                stroke: '#5e5c5cff',
+                strokeThickness: 2,
+            };
+            
+            // 3. Add Main Text
+            const introText = this.add.text(100, groundLevel - 600, 'Frontend\nDeveloper \n', textStyle);
+            introText.setDepth(2).setScrollFactor(1);
+
+            // 4. Add Subtitle Text
+            const subtitleText = this.add.text(110, groundLevel - 200, 'Brings life to your components', subTextStyle);
+            subtitleText.setDepth(2).setScrollFactor(1);
+
+            // --- CHANGED: KnowCSS (Assigned to 'this', hidden initially) ---
+            this.knowCss = this.add.text(2200, groundLevel - 650, 'Good Knowledge Of Css...', knowCssSytle);
+            this.knowCss.setDepth(2).setScrollFactor(1);
+            this.knowCss.setAlpha(0); // Initially invisible
+
+            // --- CHANGED: Lib (Assigned to 'this', hidden initially) ---
+            this.lib = this.add.text(3000, groundLevel + 50, 'And bunch of UI Libraries...', knowCssSytle);
+            this.lib.setDepth(100).setScrollFactor(1);
+            this.lib.setAlpha(0); // Initially invisible
+
+            // --- NEW: Add Floating Motion Tweens ---
+            this.tweens.add({
+                targets: this.knowCss,
+                x: '+=25',        // Move right
+                duration: 2000,
+                yoyo: true,       // Move back
+                repeat: -1,       // Forever
+                ease: 'Sine.easeInOut'
+            });
+
+            this.tweens.add({
+                targets: this.lib,
+                x: '+=25',
+                duration: 2500,   // Slightly different speed
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+
+            // Add sparkling particles behind text
+            const textBounds = introText.getBounds();
+            const emitter = this.add.particles(0, 0, 'sparkle', {
+                x: { min: textBounds.x, max: textBounds.x + textBounds.width },
+                y: { min: textBounds.y, max: textBounds.y + textBounds.height },
+                lifespan: { min: 800, max: 1500 },
+                speedY: { min: -20, max: -50 },
+                scale: { start: 0.5, end: 0 },
+                alpha: { start: 0.8, end: 0 },
+                rotate: { min: 0, max: 360 },
+                tint: [0xFFD700, 0xFFFFFF, 0x00DFA2],
+                blendMode: 'ADD',
+                frequency: 80
+            });
+
+            emitter.setDepth(1);
+            emitter.setScrollFactor(1);
+
+            // --- PLAYER & WORLD ---
+
+            this.player = this.physics.add.sprite(300, groundLevel - 100, 'playerIdle');
+            this.player.setScale(0.4).setDepth(10).play('idle-anim');
+
+            this.addWorldContent();
+            this.addGrassAndFlowers();
+            this.addWindEffect();
+
+            this.cursors = this.input.keyboard.createCursorKeys();
+            this.cameras.main.setBounds(0, 0, this.worldWidth, this.worldHeight);
+            this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
         }
 
         createSky() {
@@ -267,33 +324,23 @@ export default function PlatformerGame() {
           graphics.strokePath();
         }
 
-        // NEW FUNCTION: Draws rocks from surface down to bottom
+        // Draws rocks from surface down to bottom with low density
         createUndergroundRocks() {
           const rockGraphics = this.add.graphics();
           rockGraphics.setDepth(6); 
           const rockColors = [0x8B4513, 0x654321, 0x5D4037, 0x795548];
 
-          // 1. COLUMN CONTROL: Increase this number (e.g., 40 or 50) to have fewer vertical lines of rocks
           const horizontalSpacing = 20; 
 
           for (let i = 0; i < this.platformPoints.length; i += horizontalSpacing) {
             
-            // Random horizontal offset so columns aren't straight lines
             const point = this.platformPoints[i];
-            
-            // Start a bit deeper so they don't always hug the grass line perfectly
             let currentY = point.y + Phaser.Math.Between(20, 100); 
 
             while (currentY < this.worldHeight + 40) {
-              
-              // 2. RANDOM SKIP: 30% chance to just skip this rock entirely
-              // This breaks up the "grid" look significantly
               if (Phaser.Math.FloatBetween(0, 1) > 0.3) {
-                  
                   const width = Phaser.Math.Between(30, 60);
                   const height = Phaser.Math.Between(25, 45);
-                  
-                  // Add random X scatter so they aren't perfectly aligned vertically
                   const rockX = point.x + Phaser.Math.Between(-30, 30);
                   
                   rockGraphics.fillStyle(Phaser.Math.RND.pick(rockColors), 1);
@@ -302,10 +349,6 @@ export default function PlatformerGame() {
                   rockGraphics.fillStyle(0x000000, 0.2);
                   rockGraphics.fillEllipse(rockX + 5, currentY + 5, width * 0.8, height * 0.8);
               }
-
-              // 3. ROW CONTROL: Huge Vertical Gap
-              // Instead of adding just 'height', we add height + a big random gap (e.g. 50 to 150px)
-              // This makes them scattered far apart vertically.
               const verticalGap = Phaser.Math.Between(80, 200); 
               currentY += verticalGap; 
             }
@@ -313,6 +356,7 @@ export default function PlatformerGame() {
         }
 
         addWorldContent() {
+          // --- EXISTING STATUE ---
           const statueX = this.worldWidth - 300;
           const statueIdx = Math.floor((statueX / this.worldWidth) * (this.platformPoints.length - 1));
           const statueY = this.platformPoints[statueIdx].y;
@@ -320,6 +364,26 @@ export default function PlatformerGame() {
           this.add.image(statueX, statueY + 150, 'statue')
             .setOrigin(0.5, 1) 
             .setScale(.35)
+            .setDepth(4);
+
+          // --- NEW: TEDX BANNER (-600) ---
+          const tedxX = this.worldWidth - 800;
+          const tedxIdx = Math.floor((tedxX / this.worldWidth) * (this.platformPoints.length - 1));
+          const tedxY = this.platformPoints[tedxIdx].y;
+          
+          this.add.image(tedxX, tedxY + 150, 'tedxBanner')
+            .setOrigin(0.5, 1)
+            .setScale(0.60)
+            .setDepth(4);
+
+          // --- NEW: PRAKARSH BANNER (-900) ---
+          const prakarshX = this.worldWidth - 1500;
+          const prakarshIdx = Math.floor((prakarshX / this.worldWidth) * (this.platformPoints.length - 1));
+          const prakarshY = this.platformPoints[prakarshIdx].y;
+          
+          this.add.image(prakarshX, prakarshY + 150, 'prakarshBanner')
+            .setOrigin(0.5, 1)
+            .setScale(0.60)
             .setDepth(4);
 
           const cards = [{ key: 'htmlCard', x: 1100 }, { key: 'cssCard', x: 1400 }, { key: 'jsCard', x: 1700 }];
@@ -351,7 +415,7 @@ export default function PlatformerGame() {
             // Create grass blade
             const grassGraphics = this.add.graphics();
             grassGraphics.setPosition(x, platformY - 8);
-            grassGraphics.setDepth(7); // Increased to 7 to be above rocks
+            grassGraphics.setDepth(7); 
             
             const grassHeight = Phaser.Math.Between(15, 30);
             const grassColor = Phaser.Math.RND.pick([0x3CB371, 0x2E8B57, 0x90EE90]);
@@ -362,7 +426,6 @@ export default function PlatformerGame() {
             grassGraphics.lineTo(Phaser.Math.Between(-3, 3), -grassHeight);
             grassGraphics.strokePath();
             
-            // Add sway animation
             this.tweens.add({
               targets: grassGraphics,
               rotation: Phaser.Math.FloatBetween(-0.15, 0.15),
@@ -382,7 +445,7 @@ export default function PlatformerGame() {
             // Flower stem
             const flowerGraphics = this.add.graphics();
             flowerGraphics.setPosition(x, platformY - 10);
-            flowerGraphics.setDepth(7); // Increased to 7
+            flowerGraphics.setDepth(7); 
             
             flowerGraphics.lineStyle(1.5, 0x228B22, 1);
             flowerGraphics.beginPath();
@@ -408,7 +471,6 @@ export default function PlatformerGame() {
               const petal = this.add.circle(petalX, petalY, 4, flowerColor, 1);
               petal.setDepth(7);
               
-              // Gentle sway
               this.tweens.add({
                 targets: petal,
                 y: petalY + Phaser.Math.FloatBetween(-1, 1),
@@ -419,7 +481,6 @@ export default function PlatformerGame() {
               });
             }
             
-            // Sway the stem
             this.tweens.add({
               targets: flowerGraphics,
               rotation: Phaser.Math.FloatBetween(-0.1, 0.1),
@@ -441,11 +502,9 @@ export default function PlatformerGame() {
         }
 
         addWindEffect() {
-          // Wind zone between x: 2300 to x: 3400
           const windStartX = 2300;
           const windEndX = 3400;
           
-          // Create leaf particle emitter
           const leafEmitter = this.add.particles(0, 0, 'leaf', {
             x: { min: windStartX, max: windEndX },
             y: { min: this.worldHeight * 0.5, max: this.worldHeight * 0.9 },
@@ -464,7 +523,6 @@ export default function PlatformerGame() {
           
           leafEmitter.setDepth(3);
           
-          // Add wind lines (subtle animated streaks)
           for (let i = 0; i < 15; i++) {
             const windLine = this.add.graphics();
             const startX = Phaser.Math.Between(windStartX, windEndX);
@@ -479,7 +537,6 @@ export default function PlatformerGame() {
             windLine.setPosition(startX, startY);
             windLine.setDepth(3);
             
-            // Animate wind streaks moving horizontally
             this.tweens.add({
               targets: windLine,
               x: startX + 300,
@@ -516,6 +573,30 @@ export default function PlatformerGame() {
               const targetY = point.y - (this.player.displayHeight / 2) + 50;
               this.player.y += (targetY - this.player.y) * 0.2;
             }
+          }
+
+          // --- NEW: FADE IN LOGIC ---
+          const cam = this.cameras.main;
+          const viewRightEdge = cam.scrollX + cam.width;
+
+          // Check for KnowCSS (Fade in when camera reaches text)
+          if (this.knowCss.alpha === 0 && viewRightEdge > this.knowCss.x + 400) {
+              this.tweens.add({
+                  targets: this.knowCss,
+                  alpha: 1,
+                  duration: 1000,
+                  ease: 'Power2'
+              });
+          }
+
+          // Check for Lib
+          if (this.lib.alpha === 0 && viewRightEdge > this.lib.x + 400) {
+              this.tweens.add({
+                  targets: this.lib,
+                  alpha: 1,
+                  duration: 1000,
+                  ease: 'Power2'
+              });
           }
         }
       }
