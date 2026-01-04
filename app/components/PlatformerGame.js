@@ -139,11 +139,14 @@ export default function PlatformerGame() {
             };
             
             // 3. Add Main Text
-            const introText = this.add.text(100, groundLevel - 600, 'Frontend\nDeveloper \n', textStyle);
+            const introText = this.add.text(100, groundLevel - 650, 'Frontend\nDeveloper \n', textStyle);
             introText.setDepth(2).setScrollFactor(1);
 
             // 4. Add Subtitle Text
-            const subtitleText = this.add.text(110, groundLevel - 200, 'Brings life to your components', subTextStyle);
+            const subtitleText = this.add.text(110, groundLevel - 250, 'Brings life to your components', subTextStyle);
+            subtitleText.setDepth(2).setScrollFactor(1);
+
+            const preWork = this.add.text(this.worldWidth - 1700, groundLevel - 650, 'Previous Work...', textStyle);
             subtitleText.setDepth(2).setScrollFactor(1);
 
             // --- CHANGED: KnowCSS (Assigned to 'this', hidden initially) ---
